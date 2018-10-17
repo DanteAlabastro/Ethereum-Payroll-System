@@ -5,16 +5,76 @@ pragma solidity ^0.4.25;
                         I hope you enjoy.                      */
         
                 // # Now collected in one contract! # //
+                // # And hopefully less overflows! # //
             
     //github: https://github.com/DanteAlabastro
     //remix: https://remix.ethereum.org/#version=soljson-v0.4.25+commit.59dbf8f1.js&optimize=true&gist=6cbbc20d8e304487ebb78438a3d8895e    
 
 // I transitioned to SafeMath! Let's hope nothing is broken...
-// import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
+// 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
-    // Local import for testing.
-import 'gist/SafeMath.sol';
+    // Local import
+library SafeMath {
 
+  /**
+  * @dev Multiplies two numbers, reverts on overflow.
+  */
+  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+    // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+    // benefit is lost if 'b' is also tested.
+    // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+    if (a == 0) {
+      return 0;
+    }
+
+    uint256 c = a * b;
+    require(c / a == b);
+
+    return c;
+  }
+
+  /**
+  * @dev Integer division of two numbers truncating the quotient, reverts on division by zero.
+  */
+  function div(uint256 a, uint256 b) internal pure returns (uint256) {
+    require(b > 0); // Solidity only automatically asserts when dividing by 0
+    uint256 c = a / b;
+    // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+    return c;
+  }
+
+  /**
+  * @dev Subtracts two numbers, reverts on overflow (i.e. if subtrahend is greater than minuend).
+  */
+  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+    require(b <= a);
+    uint256 c = a - b;
+
+    return c;
+  }
+
+  /**
+  * @dev Adds two numbers, reverts on overflow.
+  */
+  function add(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a + b;
+    require(c >= a);
+
+    return c;
+  }
+
+  /**
+  * @dev Divides two numbers and returns the remainder (unsigned integer modulo),
+  * reverts when dividing by zero.
+  */
+  function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+    require(b != 0);
+    return a % b;
+  }
+  
+}
+    
 contract payroll{
     
     using SafeMath for uint256;
@@ -138,9 +198,10 @@ contract payroll{
     function Withdrawl(uint256 EmployeeID) public PayDay {
         require(_Address[EmployeeID] == msg.sender, "The ID you provided does not match you address.");
         require(_Lock[EmployeeID] == false, "This account has been locked.");
-        msg.sender.transfer(_Balance[EmployeeID]);
+        uint paycheck = _Balance[EmployeeID];
         ReservedBalance = ReservedBalance.sub(_Balance[EmployeeID]);
         _Balance[EmployeeID] = 0;
+        msg.sender.transfer(paycheck);
     }
     
     /* Admin Functions */
@@ -148,6 +209,8 @@ contract payroll{
     
         //Onboard    
     function onboard(string Name, address Address) public Owned {
+        require(EmployeeCount < 2**256 - 1, "Too many employees!");
+        require(ID < 2**256 - 1, "Too many employees!");
         _Name[ID] = Name;
         _IDnumber[ID] = ID;
         _Address[ID] = Address;
