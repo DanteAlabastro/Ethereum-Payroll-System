@@ -1,1 +1,1 @@
-*.rb linguist-language=Solidity
+*.sol linguist-language=Solidity
